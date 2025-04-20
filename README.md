@@ -6,5 +6,5 @@
 - Julia Deep Learning library [Lux.jl](https://lux.csail.mit.edu/stable/)
 
 ### Theory Concepts:
-1. Mathematical Background ([4.3](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL_chapter4_annotated.pdf), [5.4, 5.5, 5.9](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL_chapter5_annotated.pdf))
+1. Mathematical Background ([4.3](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter4-annotated.pdf), [5.4, 5.5, 5.9](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter5-annotated.pdf))
 2. Feedforward Networks (6.1-5)
