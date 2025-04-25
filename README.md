@@ -7,5 +7,5 @@
 
 ### Theory Concepts:
 1. Mathematical Background ([4.3](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter4-annotated.pdf), [5.4, 5.5, 5.9](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter5-annotated.pdf))
-2. Feedforward Networks ([6.1-4](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter4-annotated.pdf), [5.4, 5.5, 5.9](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter6-annotated.pdf))
-3. Back-Propagation ([6.5](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter4-annotated.pdf), [5.4, 5.5, 5.9](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter6-annotated.pdf))
+2. Feedforward Networks ([6.1-4](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter6-annotated.pdf))
+3. Back-Propagation ([6.5](https://github.com/dgsob/Deep-Learning-RSS/blob/main/theory/DL-chapter6-annotated.pdf))
