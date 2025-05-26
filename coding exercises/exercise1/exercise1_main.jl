@@ -107,6 +107,57 @@ training algorithm. A sentence or two is sufficient for each justification.
 During training, monitor the training error as well as the validation error.
 =#
 
+#= Design chocies:
+    > depth and width: 2, 16 <----------------------------------------------------------------------------------------------------
+    Based on DLbook Chapter 6 I guess that [more layers + fewer units ---> better generalization].
+    At the same time my intuition is that the most shalow network we can get away with is best.
+    We'll start with 2 layers and 16 neurons, and see how it goes.
+    > activation function: ReLU <-------------------------------------------------------------------------------------------------
+    I like ReLU. It's simple, cool, and kinda genius. We will see if this project uncovers any potential
+    needs for modifications/alternatives.
+    > output function: 7 logits with softmax <------------------------------------------------------------------------------------
+    We need to assign a sample to one of 7 classes. It is a multi-class classification problem.
+    We should aim to output a probability distribution over all classes.
+    This would allow us to quantify uncertainty with directly interpretable numbers. This allows us to 
+    make an informed decision (like pick class with the highest probability) based on measurable premises,
+    which can be traced back and used to first evaluate, and then improve the model's performance. 
+    In order to achieve that, we will use 7 neurons in the output layer. Each will then output a raw score
+    for each class, a logit. Then we will appply softmax to these logits  - a straightforward way to make 
+    them add up to 1. Then the output is the max over the distribution. 
+    > loss function: Weighted cross-entropy loss <---------------------------------------------------------------------------------
+    We need a way to quantify error between the predicted class by the output function, and the true label.
+    We also have imbalanced classes, and need to deal with that as well.
+    Based on our assumption that softmax outpus are good, we need something that is compatible with softmax 
+    outputs and supports gradient-based optimization. Since the output layer uses softmax to produce probabilities, 
+    the loss should interpret these as a categorical distribution. Given the true label and input features, 
+    MLE framework can be uset to predict model parameters θ (wieghts, biases) that would result in these features 
+    being observed for this label. This, simplifying, gives us a direct comparison with our output function. 
+    We will use log-likelihood, becasue addition (log is monotonic) is more numerically stable than multiplication 
+    (can go to extremely small numbers), and we will spcefically minimize negative log-likelihood, becasue this means 
+    going from something positive to 0, which is the most stable, intutive and reliable way to optimize something, 
+    alligning with the idea of gradient descend: θ <- θ - η * ∇NLL. We will also add weights to account for class 
+    imbalance to each of this output, making the underrepresented classes artificially more visible.
+    > initialization: He for hidden layers, Glorot for output <---------------------------------------------------------------------
+    Most natural phenomena follow some sort of distribution resembling a Gaussian, in one way or another. 
+    Gaussian-based random wieghts initialization should be a good starting point. He and Glorot were 
+    suggested by Grok, they both allign with my assumption, only adjusting variance in a way to fit ReLU and softamx. 
+    In a more serious problem we would use similar approach to actually pretrain initialization values, and bias them 
+    towards the right values on the start, or use previous experience from similar setting, like we often do in RL. 
+    > training algorithm: Adam <-----------------------------------------------------------------------------------------------------
+    We already implicitly made the decision for the algorithm to be based on gradient descend + backpropagation. 
+    We mentioned θ <- θ - η * ∇NLL, where η is some learning rate. However, the learning rate should be adjusted 
+    dynamically to address the exploration-exploitation trade-off. We should also do mini-batch updates, as updating 
+    everything at once would be slow. There must be a way to point these scattered gradients to the same general direction, 
+    ignoring local trends. We would do stochastic updates to escape these local trends if necessary. Additionally, we want 
+    to somehow remember the direction we are going to, this can be achieved with an exponentially weighted moving average 
+    of past gradients, aka momentum. It results in smoothing out the oscillations and guiding the model toward the minimum 
+    of the loss function, but of course the direction is more biased to the past experience - if the course was good from
+    the beginning, we will arive at the destionation faster. If not, it will take us way longer to realize that. 
+    However in classification problems, it seems like the benefits outwieght the risks, as the direction seems straightforward, 
+    unlike in RL problems. We will stop at this point, as all of the above suggests Adam aligns well with this description. 
+    However, normally there is still much more to the "training algorithm" analysis it seems. 
+=#
+
 #= Task 7 (10 p): Plot the validation error and training error curve, where
 the x-axis indicates the training epoch and the y-axis indicates the error.
 =#
