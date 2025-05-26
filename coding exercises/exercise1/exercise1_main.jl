@@ -1,7 +1,12 @@
-using CSV
-using DataFrames
-using StatsBase
-using Random
+using CSV, DataFrames, StatsBase, Random
+using Lux, Optimisers, Statistics, Zygote, ComponentArrays
+
+
+#= Task 1 (2 p): 
+Load The Forest Covertype Dataset from the CSV file
+covertype.csv found in the projects directory. Make sure to read and
+understand the description before proceeding. 
+=#
 
 function inspect_data(data)
     selected_cols = vcat(1:5, 55)
@@ -13,28 +18,29 @@ function inspect_data(data)
     println(describe(data))
 end
 
-function inspect_class_distribution(data)
+#= Task 2 (3 p): 
+Check the class distribution of the data. Is class imba-
+lance an issue? If so, explain why it could negatively affect the network
+performance. 
+=#
+
+function get_class_distribution(data)
     class_counts = combine(groupby(data, :Cover_Type), nrow => :count)
     class_counts.proportion = class_counts.count / sum(class_counts.count)
 
-    println("Class distribution:")
-    println(class_counts)
+    return class_counts
 end
 
-function split_dataset(df::DataFrame, training_portion=0.8, validation_portion=0.1, seed=77)
-    Random.seed!(seed)
-    n = nrow(df)
-    indices = shuffle(1:n)
+#= The classess are imbalanced. It means the majority classes contribute
+more to the loss, and an overall high accuracy can be achieved by simply
+predicting the majority class, instead of catching patterns actually, 
+and universally, useful for prediction. 
+=#
 
-    train_end = Int(floor(training_portion * n))
-    val_end = train_end + Int(floor(validation_portion * n))
-
-    train_set = df[indices[1:train_end], :]
-    val_set = df[indices[train_end+1:val_end], :]
-    test_set = df[indices[val_end+1:end], :]
-
-    return train_set, val_set, test_set
-end
+#= Task 3 (5 p): 
+Standardize the dataset by writing your own function
+without using any external libraries. 
+=#
 
 function standardize(data::Vector{<:Integer}, mean, std_dev)
     if std_dev == 0
@@ -53,29 +59,6 @@ function get_statistics(data::Vector{<:Integer})
 
     return mean, std_dev
 end
-
-#= Task 1 (2 p): 
-Load The Forest Covertype Dataset from the CSV file
-covertype.csv found in the projects directory. Make sure to read and
-understand the description before proceeding. 
-=#
-
-#= Task 2 (3 p): 
-Check the class distribution of the data. Is class imba-
-lance an issue? If so, explain why it could negatively affect the network
-performance. 
-=#
-
-#= The classess are imbalanced. It means the majority classes contribute
-more to the loss, and an overall high accuracy can be achieved by simply
-predicting the majority class, instead of catching patterns actually, 
-and universally, useful for prediction. 
-=#
-
-#= Task 3 (5 p): 
-Standardize the dataset by writing your own function
-without using any external libraries. 
-=#
 
 #= Task 4 (5 p): 
 Explain why standardization is important in the context of
@@ -100,6 +83,21 @@ Standardizing with test data included simulates knowing the future, which is unr
 Split the dataset into training (80%), validation (10%), and test (10%) sets. 
 =#
 
+function split_dataset(df::DataFrame, training_portion=0.8, validation_portion=0.1, seed=77)
+    Random.seed!(seed)
+    n = nrow(df)
+    indices = shuffle(1:n)
+
+    train_end = Int(floor(training_portion * n))
+    val_end = train_end + Int(floor(validation_portion * n))
+
+    train_set = df[indices[1:train_end], :]
+    val_set = df[indices[train_end+1:val_end], :]
+    test_set = df[indices[val_end+1:end], :]
+
+    return train_set, val_set, test_set
+end
+
 #= Task 6 (30 p): Implement the training of a neural network using the
 package of your choice. Motivate your choice of depth and width, activa-
 tion function, cost function, output function, parameter initialization, and
@@ -108,10 +106,10 @@ During training, monitor the training error as well as the validation error.
 =#
 
 #= Design chocies:
-    > depth and width: 2, 16 <----------------------------------------------------------------------------------------------------
+    > depth and width: 3, [64, 32, 16] <-------------------------------------------------------------------------------------------
     Based on DLbook Chapter 6 I guess that [more layers + fewer units ---> better generalization].
     At the same time my intuition is that the most shalow network we can get away with is best.
-    We'll start with 2 layers and 16 neurons, and see how it goes.
+    We'll start with 3 layers and [64, 32, 16] neurons, and see how it goes.
     > activation function: ReLU <-------------------------------------------------------------------------------------------------
     I like ReLU. It's simple, cool, and kinda genius. We will see if this project uncovers any potential
     needs for modifications/alternatives.
@@ -158,6 +156,94 @@ During training, monitor the training error as well as the validation error.
     However, normally there is still much more to the "training algorithm" analysis it seems. 
 =#
 
+function loss_function(model, θ, state, x, y, class_weights)
+    logits, state = model(x, θ, state)  # (7, batch_size)
+    log_probs = logsoftmax(logits; dims=1)
+
+    # Select log-probabilities for true labels
+    indices = CartesianIndex.(y, 1:length(y))
+    true_log_probs = log_probs[indices] # vector of length batch_size
+    
+    loss = -mean(class_weights[y] .* true_log_probs)
+
+    return loss, state, ()
+end
+
+function calculate_class_weights(y)
+    counts = countmap(y)
+    total = length(y)
+    K = length(counts)  # 7 classes
+    weights = Float32[total / (K * counts[i]) for i in 1:K]
+    return weights / maximum(weights)  # Normalize
+end
+
+function train_batch(model, θ, state, opt_state, x_batch, y_batch, class_weights)
+    (loss, state), gs = withgradient(p -> loss_function(model, p, state, x_batch, y_batch, class_weights), θ)
+    opt_state, θ = Optimisers.update(opt_state, θ, gs[1])
+    return loss, θ, state, opt_state
+end
+
+function compute_validation_metrics(model, ps, st, X_val, y_val, class_weights)
+    logits, _ = model(X_val', ps, st)  # X_val': (54, 58101)
+    logits = Float32.(logits)  # (7, 58101)
+    log_probs = logsoftmax(logits; dims=1)
+    indices = CartesianIndex.(y_val, 1:length(y_val))
+    true_log_probs = log_probs[indices]
+    val_loss = -mean(class_weights[y_val] .* true_log_probs)
+    probs = softmax(logits)
+    predictions = [i[1] for i in argmax(probs; dims=1)[:]]
+    # @show size(predictions), size(y_val), unique(predictions), unique(y_val)
+    val_acc = mean(predictions .== y_val)
+    println("Validation accuracy: $val_acc")
+    return val_loss, val_acc
+end
+
+function shuffle_data(X, y, rng)
+    perm = randperm(rng, size(X, 1))  # Permute along samples
+    return X[perm, :], y[perm]
+end
+
+function train_epoch(model, θ, state, opt_state, X_train, y_train, X_val, y_val, class_weights, batch_size, rng)
+    X_train_shuffled, y_train_shuffled = shuffle_data(X_train, y_train, rng)
+    train_loss = 0.0
+    for i in 1:batch_size:size(X_train, 1)
+        batch_end = min(i + batch_size - 1, size(X_train, 1))
+        x_batch = X_train_shuffled[i:batch_end, :]'  # Shape: (54, batch_size)
+        y_batch = y_train_shuffled[i:batch_end]
+        loss, θ, state, opt_state = train_batch(model, θ, state, opt_state, x_batch, y_batch, class_weights)
+        train_loss += loss * (batch_end - i + 1) / size(X_train, 1)
+    end
+    val_loss, val_acc = compute_validation_metrics(model, θ, state, X_val, y_val, class_weights)
+    return train_loss, val_loss, val_acc, θ, state, opt_state
+end
+
+function train_model(model, X_train, y_train, X_val, y_val, class_weights; epochs=10, batch_size=128, α=0.001, seed=77)
+    # Initialization
+    rng = Random.MersenneTwister(seed)
+    θ, state = Lux.setup(rng, model)
+    θ = ComponentArray(θ)
+    opt = Adam(α)
+    opt_state = Optimisers.setup(opt, θ)
+    
+    # Metrics
+    train_losses, val_losses, val_accuracies = Float32[], Float32[], Float32[]
+    
+    # Training loop
+    for epoch in 1:epochs
+        train_loss, val_loss, val_acc, θ, state, opt_state = train_epoch(
+            model, θ, state, opt_state, X_train, y_train, X_val, y_val, class_weights, batch_size, rng
+        )
+        
+        push!(train_losses, train_loss)
+        push!(val_losses, val_loss)
+        push!(val_accuracies, val_acc)
+        
+        println("Epoch $epoch: Train Loss = $train_loss, Val Loss = $val_loss, Val Acc = $val_acc")
+    end
+    
+    return train_losses, val_losses, val_accuracies, θ, state
+end
+
 #= Task 7 (10 p): Plot the validation error and training error curve, where
 the x-axis indicates the training epoch and the y-axis indicates the error.
 =#
@@ -172,7 +258,9 @@ function main()
     inspect_data(fct_dataset)
 
     # Task 2
-    inspect_class_distribution(fct_dataset)
+    println("Class distribution:")
+    class_counts = get_class_distribution(fct_dataset)
+    println(class_counts)
 
     # Task 5
     train_set, val_set, test_set = split_dataset(fct_dataset)
@@ -211,8 +299,37 @@ function main()
     println("===== Standardized data: test set =====")
     inspect_data(test_set)
 
-    # Task 6
+    # Task 6   
 
+    # 1. Define Model
+    input_dim = 54; hidden_dims = [64, 32, 16]; output_dim = 7
+
+    he_normal(rng, dims...) = randn(rng, Float32, dims...) * sqrt(2 / dims[end-1]) # random init for hidden layers' ReLU
+    glorot_normal(rng, dims...) = randn(rng, Float32, dims...) * sqrt(2 / (dims[end-1] + dims[end])) # random init for output layer's softmax
+
+    model = Chain(
+        Dense(input_dim, hidden_dims[1], relu; init_weight=he_normal),
+        Dense(hidden_dims[1], hidden_dims[2], relu; init_weight=he_normal),
+        Dense(hidden_dims[2], hidden_dims[3], relu; init_weight=he_normal),
+        Dense(hidden_dims[3], output_dim; init_weight=glorot_normal)
+    )
+
+    # 2. Input and Output Data (Dense takes Vectors or Matrices)
+    X_train = Matrix{Float32}(train_set[:, 1:54])
+    y_train = Vector{Int}(train_set.Cover_Type)
+    X_val = Matrix{Float32}(val_set[:, 1:54])
+    y_val = Vector{Int}(val_set.Cover_Type)
+
+    # 3. Class weights (based on inverse frequencies)
+    class_weights = calculate_class_weights(y_train)
+
+    # 4. Training
+    train_losses, val_losses, val_accuracies, θ_final, state_final = train_model(
+        model, X_train, y_train, X_val, y_val, class_weights; epochs=10, batch_size=128, α=0.001
+    )
+
+    # Task 7
+    
 end
 
 main()
