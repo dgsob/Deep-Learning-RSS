@@ -110,9 +110,19 @@ During training, monitor the training error as well as the validation error.
     Based on DLbook Chapter 6 I guess that [more layers + fewer units ---> better generalization].
     At the same time my intuition is that the most shalow network we can get away with is best.
     We'll start with 3 layers and [64, 32, 16] neurons, and see how it goes.
+    Tests: 
+        [64, 32, 16] -> 76.5%, [32, 16, 8] -> 70%, [128, 64, 32] -> 83.3%, [256, 128] -> 86.8%,
+        [64, 32, 16, 8] -> 74%, [128, 64, 32, 16] -> 83.6%, [64, 128, 32] -> 83.5%, [64, 32] -> 75.3%
+        [128, 64] -> 81.8%, [128, 256] -> 85.7%, [128, 256, 64] -> 86.9%, [192, 256] -> 86.9%
+    Empirical tests suggest [more layers + fewer units ---> better generalization] is false, 
+    or at least not universally true. Even seemingly ridiculous values in 2-layered setup perform 
+    at least as good as [more layers + fewer units] approach. 
+    However, e.g., [256, 128] -> 86.8% was visibly slower than [128, 64, 32] -> 83.3%.
+
     > activation function: ReLU <-------------------------------------------------------------------------------------------------
     I like ReLU. It's simple, cool, and kinda genius. We will see if this project uncovers any potential
     needs for modifications/alternatives.
+
     > output function: 7 logits with softmax <------------------------------------------------------------------------------------
     We need to assign a sample to one of 7 classes. It is a multi-class classification problem.
     We should aim to output a probability distribution over all classes.
@@ -122,6 +132,7 @@ During training, monitor the training error as well as the validation error.
     In order to achieve that, we will use 7 neurons in the output layer. Each will then output a raw score
     for each class, a logit. Then we will appply softmax to these logits  - a straightforward way to make 
     them add up to 1. Then the output is the max over the distribution. 
+
     > loss function: Weighted cross-entropy loss <---------------------------------------------------------------------------------
     We need a way to quantify error between the predicted class by the output function, and the true label.
     We also have imbalanced classes, and need to deal with that as well.
@@ -135,12 +146,14 @@ During training, monitor the training error as well as the validation error.
     going from something positive to 0, which is the most stable, intutive and reliable way to optimize something, 
     alligning with the idea of gradient descend: θ <- θ - η * ∇NLL. We will also add weights to account for class 
     imbalance to each of this output, making the underrepresented classes artificially more visible.
+
     > initialization: He for hidden layers, Glorot for output <---------------------------------------------------------------------
     Most natural phenomena follow some sort of distribution resembling a Gaussian, in one way or another. 
     Gaussian-based random wieghts initialization should be a good starting point. He and Glorot were 
     suggested by Grok, they both allign with my assumption, only adjusting variance in a way to fit ReLU and softamx. 
     In a more serious problem we would use similar approach to actually pretrain initialization values, and bias them 
     towards the right values on the start, or use previous experience from similar setting, like we often do in RL. 
+    
     > training algorithm: Adam <-----------------------------------------------------------------------------------------------------
     We already implicitly made the decision for the algorithm to be based on gradient descend + backpropagation. 
     We mentioned θ <- θ - η * ∇NLL, where η is some learning rate. However, the learning rate should be adjusted 
@@ -254,13 +267,13 @@ function main()
     # Task 1
     fct_dataset = CSV.read("covtype.csv", DataFrame)  # Forest Covertype Dataset
 
-    println("===== Original data =====")
-    inspect_data(fct_dataset)
+    # println("===== Original data =====")
+    # inspect_data(fct_dataset)
 
     # Task 2
-    println("Class distribution:")
+    # println("Class distribution:")
     class_counts = get_class_distribution(fct_dataset)
-    println(class_counts)
+    # println(class_counts)
 
     # Task 5
     train_set, val_set, test_set = split_dataset(fct_dataset)
@@ -292,17 +305,17 @@ function main()
         test_set[!, i] = std_col
     end
 
-    println("===== Standardized data: training set =====")
-    inspect_data(train_set)
-    println("===== Standardized data: validation set =====")
-    inspect_data(val_set)
-    println("===== Standardized data: test set =====")
-    inspect_data(test_set)
+    # println("===== Standardized data: training set =====")
+    # inspect_data(train_set)
+    # println("===== Standardized data: validation set =====")
+    # inspect_data(val_set)
+    # println("===== Standardized data: test set =====")
+    # inspect_data(test_set)
 
     # Task 6   
 
     # 1. Define Model
-    input_dim = 54; hidden_dims = [64, 32, 16]; output_dim = 7
+    input_dim = 54; hidden_dims = [128, 64, 32]; output_dim = 7
 
     he_normal(rng, dims...) = randn(rng, Float32, dims...) * sqrt(2 / dims[end-1]) # random init for hidden layers' ReLU
     glorot_normal(rng, dims...) = randn(rng, Float32, dims...) * sqrt(2 / (dims[end-1] + dims[end])) # random init for output layer's softmax
@@ -311,7 +324,8 @@ function main()
         Dense(input_dim, hidden_dims[1], relu; init_weight=he_normal),
         Dense(hidden_dims[1], hidden_dims[2], relu; init_weight=he_normal),
         Dense(hidden_dims[2], hidden_dims[3], relu; init_weight=he_normal),
-        Dense(hidden_dims[3], output_dim; init_weight=glorot_normal)
+        # Dense(hidden_dims[3], hidden_dims[4], relu; init_weight=he_normal),
+        Dense(hidden_dims[end], output_dim; init_weight=glorot_normal)
     )
 
     # 2. Input and Output Data (Dense takes Vectors or Matrices)
@@ -326,7 +340,7 @@ function main()
     # 4. Training
     train_losses, val_losses, val_accuracies, θ_final, state_final = train_model(
         model, X_train, y_train, X_val, y_val, class_weights; epochs=10, batch_size=128, α=0.001
-    )
+    );
 
     # Task 7
     
