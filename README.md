@@ -16,12 +16,97 @@ To be able to:
 ### Theory Concepts:
 1. Mathematical Background (4.3, 5.4, 5.5, 5.9)
 2. Feedforward Networks (6.1-4) and Back-Propagation (6.5)
-3. Regularization for DL (7.1, 7.3-5 (skip 7.5.1), 7.7-8, 7.10-12)
+3. Regularization for DL (7.1, 7.3-5 (skip 7.5.1), 7.7-8, 7.10-13)
 4. Optimization (8.1-5 (Skip 8.3.3))
 5. Convolutional NN (9.1-9)
 6. Recurrent & Recursive Nets (10.1-10 (skip 10.8))
 
 ### Notes
+
+#### Ad. 3: Regularization in DL (7.1, 7.3-5 (skip 7.5.1), 7.7-8, 7.10-13)
+##### L1 and L2 Regularization (Weight Decay)
+* What it does: adds a penalty to the loss function based on the size of the model's weights.
+* Idea: L1 encourages sparsity by driving some weights to zero, while L2 pushes all weights toward smaller values, reducing model complexity.
+* Pros:
+    * Simple to implement and works with most optimization algorithms.
+    * L1 automatically selects important features by zeroing out others.
+    * L2 is differentiable $\rightarrow$ compatible with gradient-based optimization.
+    * L2 ensures smooth weight adjustments $\rightarrow$ helps gradient-based optimization.
+* Cons:
+    * Requires trial-and-error tuning of the penalty strength.
+    * May not help with overfitting in very deep or complex models.
+
+##### Early Stopping
+* What it does: halts training before overfitting occurs.
+* Idea: monitor performance on a validation set and stop training when it begins to degrade, preserving generalization.
+* Pros:
+    * Easy to apply to any model without need to alter its architecture.
+    * Acts as a natural constraint on model complexity by capping training iterations.
+* Cons:
+    * Needs a separate validation set.
+    * Timing the stop can be tricky (too early underfits, too late overfits).
+
+##### Dropout
+* What it does: randomly deactivates units during training.
+* Idea: by dropping a fraction of neurons in each pass, it prevents units from co-adapting too much, mimicking an ensemble of networks.
+* Pros:
+    * Reduces feature co-dependency, especially in deep networks.
+    * Mimics training multiple models at a fraction of the cost.
+* Cons:
+    * Computationally expensive due to repeated random sampling.
+    * Dropout rate needs careful tuning to avoid underfitting.
+
+##### Data Augmentation
+* What it does: artificially expands the training dataset.
+* Idea: apply transformations (e.g., rotations, flips) to existing data to create new training examples, improving model robustness.
+* Pros:
+    * Increases effective dataset size $\rightarrow$ good for limited data scenarios.
+    * Increases variations in the dataset.
+    * Can be cheap if transformations are applied during training.
+* Cons:
+    * Not suitable for all data types (e.g., tabular).
+    * Requires domain expertise to design transformations.
+
+##### Batch Normalization
+* What it does: normalizes layer inputs during training.
+* Idea: normalize the inputs to each layer to reduce internal covariate shift, stabilizing and regularizing the learning process.
+* Pros:
+    * Speeds up training by supporting higher learning rates.
+    * Eases gradient flow (assumption: potentially reduces issues like vanishing gradients).
+* Cons:
+    * Computationally expensive due to extra calculations per layer (overhead).
+    * Less impactful in shallow or small networks.
+
+##### Ensemble Methods
+* What it does: combines multiple models' predictions.
+* Idea: train several models and aggregate their outputs to reduce variance and improve generalization.
+* Pros:
+    * Lowers prediction variance by blending different model strengths.
+    * Pairs well with other techniques for added benefits.
+* Cons:
+    * Computationally expensive.
+    * Requires training and managing multiple models.
+
+##### Adversarial Training
+* What it does: incorporates adversarial examples into the training process.
+* Idea: expose the model to perturbed inputs (adversarial examples) to enhance robustness and generalization.
+* Pros:
+    * Improves resilience to adversarial attacks.
+    * Acts like data augmentation by introducing challenging examples.
+* Cons:
+    * Computationally expensive due to generating perturbations (overhead).
+    * May weaken performance on unperturbed, standard data.
+    * Requires domain knowledge and careful design to mitigate possible negative side-effects.
+
+##### Parameter Sharing
+* What it does: reuses parameters across model components.
+* Idea: share weights (e.g., in convolutional layers) to reduce the number of unique parameters, constraining the model and aiding generalization.
+* Pros:
+    * Shrinks model size, making it more efficient to train and run.
+    * Leverages data structure (e.g., spatial patterns) for better learning.
+* Cons:
+    * Limited to architectures where sharing fits (e.g., not fully connected layers).
+    * May restrict the model’s flexibility if over-applied.
 
 #### Ad. 4: Optimization in DL (8.1-5 (Skip 8.3.3))  
 ##### 8.1 "How learning differrs from pure optimization"
