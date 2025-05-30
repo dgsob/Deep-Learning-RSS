@@ -10,7 +10,7 @@ To be able to:
 
 ### Main resources:
 - The MT7042-HT24 course-book: ["Deep Learning" by Goodfellow et al., MIT Press, 2016](https://www.deeplearningbook.org/)
-- [Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges](https://geometricdeeplearning.com/), the "proto-book"
+- [Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges](https://geometricdeeplearning.com/)$^*$, specifically the "[proto-book](https://arxiv.org/pdf/2104.13478)"
 - Julia Deep Learning library [Lux.jl](https://lux.csail.mit.edu/stable/)
 
 ### Theory Concepts:
@@ -52,3 +52,18 @@ To be able to:
 2. RMSProp
 3. Adam (adaptive moments)
 ##### Algorithms actively in use: SGD, SGD with momentum, RMSProp, RMSProp with momentum, AdaDelta, Adam.
+
+
+
+
+
+
+
+
+
+
+
+
+                     
+---
+$^*$ The people in the pictures on this webpage are Felix Klein and Emmy Noether. The authors of the book "make a modest attempt to apply the Erlangen Programme mindset to the domain of deep learning, with the ultimate goal of obtaining a systematisation of this field and ‘connecting the dots’." They "call this geometrisation attempt ‘Geometric Deep Learning’, and true to the spirit of Felix Klein, propose to derive different inductive biases and network architectures implementing them from first principles of symmetry and invariance."
