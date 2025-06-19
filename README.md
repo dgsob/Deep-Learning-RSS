@@ -24,6 +24,22 @@ To be able to:
 
 ### Notes
 
+#### Ad. 2: Feedforward Networks (6.1-4) and Back-Propagation (6.5)
+##### Losses
+* cross-entropy between the training data and the model distribution (negative log-likelihood $\rightarrow$ MLE)
+```
+logits = jnp.array([[1.2, -0.8, -0.5], [0.9, -1.2, 1.1]])
+labels = jnp.array([0, 1])
+
+# Softmax
+exp_logits = jnp.exp(logits - jnp.max(logits, axis=1, keepdims=True))
+softmax_probs = exp_logits / jnp.sum(exp_logits, axis=1, keepdims=True)
+
+# Cross-entropy loss
+loss = -jnp.log(softmax_probs[jnp.arange(logits.shape[0]), labels])
+print(loss)  # Should print ~[0.2761, 2.9518]
+```
+* MSE, MAE
 #### Ad. 3: Regularization in DL (7.1, 7.3-5 (skip 7.5.1), 7.7-8, 7.10-13)
 ##### L1 and L2 Regularization (Weight Decay)
 * What it does: adds a penalty to the loss function based on the size of the model's weights.
