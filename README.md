@@ -12,7 +12,9 @@ To be able to:
 - The MT7042-HT24 course-book: ["Deep Learning" by Goodfellow et al., MIT Press, 2016](https://www.deeplearningbook.org/)
 - [Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges](https://geometricdeeplearning.com/)$^*$, specifically the "[proto-book](https://arxiv.org/pdf/2104.13478)"
 - Julia Deep Learning library [Lux.jl](https://lux.csail.mit.edu/stable/)
-- Deep Learning in Python: [JAX](https://deepmind.google/discover/blog/using-jax-to-accelerate-our-research) and [Equinox](https://docs.kidger.site/equinox/all-of-equinox)
+- Deep Learning in Python: 
+    - [JAX](https://deepmind.google/discover/blog/using-jax-to-accelerate-our-research) and [Equinox](https://docs.kidger.site/equinox/all-of-equinox) - for hardware acceleration, optimizations, and DeepMind ecosystem familiarity
+    - PyTorch [Course](https://www.youtube.com/watch?v=V_xro1bcAuA) - for quicker prototyping, more vibe-coding friendly
 
 ### Theory Concepts:
 1. Mathematical Background (4.3, 5.4, 5.5, 5.9)
